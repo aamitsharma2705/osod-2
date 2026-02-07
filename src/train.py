@@ -67,10 +67,14 @@ def main():
     args = parse_args()
     device = torch.device(DEFAULT_CONFIG.device if torch.cuda.is_available() else "cpu")
 
+    # Background + VOC + (optional) COCO
     num_classes = len(VOC_CLASSES) + 1  # background
+    if args.split in ("voc_coco_t1", "voc_coco_t2"):
+        num_classes = 1 + len(VOC_CLASSES) + 80  # COCO has 80 categories
     model = build_model(
         num_classes=num_classes,
         embed_dim=DEFAULT_CONFIG.clip_embed_dim,
+        temperature=DEFAULT_CONFIG.semantic_temperature,
     )
     model.to(device)
     model.train()
@@ -89,6 +93,7 @@ def main():
 
     start_epoch = 0
     iteration = 0
+    best_hmp = -1.0
     args.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
     if args.resume and args.resume.exists():
@@ -106,7 +111,18 @@ def main():
     for epoch in range(start_epoch, args.epochs):
         for images, targets in dataloader:
             images = [F.to_tensor(img).to(device) for img in images]
-            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+            # Filter out empty targets (missing boxes) to avoid transform errors
+            filtered = []
+            for t in targets:
+                if t["boxes"].numel() == 0:
+                    continue
+                filtered.append({k: v.to(device) for k, v in t.items()})
+            if len(filtered) == 0:
+                continue
+            # Keep images aligned with targets length
+            targets = filtered
+            if len(targets) != len(images):
+                images = images[: len(targets)]
 
             losses, sem = model(images, targets)
             total_loss = sum(loss for loss in losses.values())
@@ -122,6 +138,18 @@ def main():
                     roi_labels_fg = roi_labels[fg_mask] - 1  # background -> -1 removed
                     # Project ROI feats into CLIP space and get logits
                     logits, proj = model.semantic_head(roi_feats_fg, class_embeds)
+                    # Mask labels that exceed class_embeds (stubs) to avoid OOB during sanity mixes
+                    valid_mask = roi_labels_fg < class_embeds.shape[0]
+                    if not valid_mask.any():
+                        optimizer.zero_grad()
+                        optimizer.step()
+                        iteration += 1
+                        if iteration >= max_iters:
+                            break
+                        continue
+                    logits = logits[valid_mask]
+                    proj = proj[valid_mask]
+                    roi_labels_fg = roi_labels_fg[valid_mask]
                     # Semantic alignment (Eq. 2)
                     sem_loss = semantic_alignment_loss(logits, roi_labels_fg)
                     # De-correlation (Eq. 5) on projected feats
@@ -152,6 +180,21 @@ def main():
                 f"Epoch {epoch+1} eval | PK: {metrics['PK']:.4f} | "
                 f"PU: {metrics['PU']:.4f} | HMP: {metrics['HMP']:.4f}"
             )
+            if metrics["HMP"] > best_hmp:
+                best_hmp = metrics["HMP"]
+                best_path = args.checkpoint_dir / "best.pth"
+                torch.save(
+                    {
+                        "model": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "epoch": epoch + 1,
+                        "iteration": iteration,
+                        "config": DEFAULT_CONFIG,
+                        "metrics": metrics,
+                    },
+                    best_path,
+                )
+                print(f"New best HMP {best_hmp:.4f} -> saved {best_path}")
 
         # Save checkpoint
         ckpt_path = args.checkpoint_dir / "latest.pth"

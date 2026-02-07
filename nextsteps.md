@@ -11,9 +11,9 @@
 - Verify CLIP prompt files for all classes used in T1/T2; extend prompts if needed.
 
 ## Evaluation
-- Complete entropy-thresholded evaluation in `src/eval.py` using threshold = 0.85 (paper).
-- Implement HMP (harmonic mean of known/unknown precision) in `src/eval.py` and hook into eval loop.
-- Add logging of known/unknown precision and HMP during validation.
+- Complete entropy-thresholded evaluation in `src/eval.py` using threshold = 0.85 (paper). ✔ (GT matching for PK added; unknown still placeholder)
+- Implement HMP (harmonic mean of known/unknown precision) in `src/eval.py` and hook into eval loop. ✔ (unknown still placeholder)
+- Add logging of known/unknown precision and HMP during validation. ✔
 
 ## Training Loop & Checkpoints
 - Add checkpoint saving (e.g., end of each epoch) and resume support in `src/train.py`.

@@ -17,6 +17,7 @@ class TrainConfig:
     semantic_loss_weight: float = 1.0  # Eq. (2)
     decorrelation_weight: float = 0.1  # Eq. (5)
     clip_embed_dim: int = 512          # CLIP ViT-B/32 default
+    semantic_temperature: float = 0.07 # temperature for Eq. (2) logits
     object_focus_weight: float = 1.0   # Eq. (7)
     max_samples: int = 0  # 0 = use full dataset
 

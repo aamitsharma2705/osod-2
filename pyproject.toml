@@ -17,6 +17,7 @@ open-clip-torch = "^2.24.0"
 tqdm = "^4.67.2"
 datasets = "^4.5.0"
 kaggle = "^1.8.4"
+matplotlib = "^3.10.8"
 
 [tool.poetry.group.dev.dependencies]
 black = ">=24.4.0,<25.0.0"

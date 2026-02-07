@@ -115,6 +115,8 @@ Notes:
   - `--eval-every 1` runs entropy/HMP eval each epoch (placeholder metrics until unknown labels are wired).
   - `--checkpoint-dir checkpoints` and `--resume checkpoints/latest.pth` to save/resume.
 - Dataset builder supports VOC+COCO composite for T1/T2 (requires COCO data present under `data/COCO`).
+- T1/T2 split files: place VOC–COCO split lists under `data/splits/`; placeholder split files are included (replace with official when available).
+- Prompts: `data/prompts/voc_coco_t1.txt` and `voc_coco_t2.txt` now include VOC + COCO class names (fallback to `voc_coco_full.txt` if split-specific prompts are absent).
 - Losses: Semantic alignment now uses normalized ROI projections vs CLIP text embeds (cosine/temperature logits, CE); decorrelation regularizes projected ROI features (off-diagonal correlation penalty).
 - Semantic alignment/ decorrelation now wired: ROI features exposed, background filtered, and losses applied; CLIP dim set to 512 to match ViT-B/32 text encoder.
 - RPN/object focus fixes: centerness aligned to anchors; safe handling of missing `_cached_gt_indices`.

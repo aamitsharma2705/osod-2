@@ -4,7 +4,7 @@ Provide filenames and helpers to load class prompts.
 """
 
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, List
 
 
 def split_files(split: str) -> Tuple[Path, Path]:
@@ -25,8 +25,17 @@ def split_files(split: str) -> Tuple[Path, Path]:
 def prompt_file(split: str) -> Path:
     base = Path("data") / "prompts"
     if split in ("voc_coco_t1", "voc_coco_t2"):
-        return base / f"{split}.txt"
+        candidate = base / f"{split}.txt"
+        if candidate.exists():
+            return candidate
+        # fallback to combined full list if split-specific prompt missing
+        return base / "voc_coco_full.txt"
     if split == "voc_sanity":
         return base / "voc_sanity.txt"
     raise ValueError(f"No prompt file configured for split: {split}")
+
+
+def load_split_ids(path: Path) -> list[str]:
+    with path.open() as f:
+        return [line.strip() for line in f if line.strip()]
 
