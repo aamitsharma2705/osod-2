@@ -1,0 +1,31 @@
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Env / tooling
+.venv/
+.env
+.DS_Store
+
+# Build / logs
+build/
+dist/
+*.egg-info/
+logs/
+
+# Checkpoints / outputs
+checkpoints/
+
+# Data
+data/COCO/
+data/VOC/
+
+# Jupyter
+*.ipynb
+
